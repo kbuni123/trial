@@ -1,0 +1,479 @@
+# Ethiopia Energy Planning Tool Configuration
+# Configuration file for model parameters, data sources, and application settings
+
+# Application Settings
+app:
+  name: "Ethiopia Energy Planning Tool"
+  version: "1.0.0"
+  debug: false
+  log_level: "INFO"
+
+# Geographic Settings
+geography:
+  country: "Ethiopia"
+  bounds:
+    min_lat: 3.0
+    max_lat: 15.0
+    min_lon: 33.0
+    max_lon: 48.0
+  center:
+    lat: 9.1450
+    lon: 40.4897
+  epsg_code: 4326  # WGS84
+
+# Default Planning Parameters
+planning:
+  base_year: 2025
+  planning_horizon: [2025, 2030, 2040, 2050]
+  default_demand_growth: 5.0  # % per year
+  discount_rate: 0.07
+  reserve_margin: 0.15  # 15% reserve margin
+
+# Technology Parameters (Base Year 2025)
+technologies:
+  solar:
+    capital_cost_usd_per_kw: 800
+    marginal_cost_usd_per_mwh: 0
+    lifetime_years: 25
+    capacity_factor: 0.25
+    cost_decline_rate: 0.03  # 3% per year
+    max_capacity_mw: 50000
+    
+  wind:
+    capital_cost_usd_per_kw: 1200
+    marginal_cost_usd_per_mwh: 0
+    lifetime_years: 25
+    capacity_factor: 0.30
+    cost_decline_rate: 0.02  # 2% per year
+    max_capacity_mw: 30000
+    
+  hydro:
+    capital_cost_usd_per_kw: 2000
+    marginal_cost_usd_per_mwh: 5
+    lifetime_years: 50
+    capacity_factor: 0.45
+    cost_decline_rate: 0.0  # No cost decline
+    max_capacity_mw: 15000
+    
+  gas:
+    capital_cost_usd_per_kw: 600
+    marginal_cost_usd_per_mwh: 40
+    lifetime_years: 25
+    capacity_factor: 0.50
+    efficiency: 0.45
+    cost_decline_rate: -0.01  # Slight cost increase
+    fuel_cost_usd_per_mmbtu: 8.0
+    
+  coal:
+    capital_cost_usd_per_kw: 1500
+    marginal_cost_usd_per_mwh: 30
+    lifetime_years: 40
+    capacity_factor: 0.60
+    efficiency: 0.35
+    cost_decline_rate: 0.0
+    fuel_cost_usd_per_mmbtu: 3.0
+    
+  battery:
+    capital_cost_usd_per_kwh: 300
+    power_cost_usd_per_kw: 200
+    marginal_cost_usd_per_mwh: 0.01
+    lifetime_years: 15
+    efficiency_round_trip: 0.90
+    cost_decline_rate: 0.08  # 8% per year
+    max_duration_hours: 8
+
+# Transmission Line Parameters
+transmission:
+  voltage_levels:
+    400:
+      capacity_mw: 1000
+      cost_usd_per_km: 500000
+      r_ohm_per_km: 0.03
+      x_ohm_per_km: 0.30
+      
+    230:
+      capacity_mw: 400
+      cost_usd_per_km: 300000
+      r_ohm_per_km: 0.05
+      x_ohm_per_km: 0.40
+      
+    132:
+      capacity_mw: 150
+      cost_usd_per_km: 200000
+      r_ohm_per_km: 0.10
+      x_ohm_per_km: 0.40
+      
+    66:
+      capacity_mw: 50
+      cost_usd_per_km: 100000
+      r_ohm_per_km: 0.15
+      x_ohm_per_km: 0.45
+
+# Environmental Parameters
+environment:
+  emission_factors:  # kg CO2/MWh
+    solar: 0
+    wind: 0
+    hydro: 0
+    gas: 350
+    coal: 820
+    diesel: 750
+  co2_price_trajectory:  # USD/tonne CO2
+    2025: 0
+    2030: 25
+    2040: 50
+    2050: 100
+
+# Data Processing Settings
+data_processing:
+  clustering:
+    methods: ["K-means", "Hierarchical", "Administrative", "No clustering"]
+    default_clusters: 50
+    max_clusters: 200
+    
+  settlement_filters:
+    min_population: 0
+    max_distance_to_grid_km: 200
+    min_energy_demand_kwh_per_day: 0
+    
+  data_validation:
+    coordinate_bounds_check: true
+    population_range: [0, 5000000]
+    demand_range: [0, 100000]  # kWh/day
+    
+# Visualization Settings
+visualization:
+  map:
+    default_zoom: 6
+    marker_size_range: [5, 25]
+    line_width_range: [2, 8]
+    
+  colors:
+    solar: "#FDB462"
+    wind: "#80B1D3"
+    hydro: "#B3DE69"
+    gas: "#FCCDE5"
+    coal: "#D9D9D9"
+    battery: "#BEBADA"
+    transmission: "#FF5555"
+    
+  chart_themes:
+    default: "plotly_white"
+    dark: "plotly_dark"
+
+# Model Solver Settings
+solver:
+  default: "cbc"  # Open-source solver
+  alternatives: ["glpk", "gurobi", "cplex"]
+  timeout_seconds: 3600
+  gap_tolerance: 0.01
+  
+# File Paths and Data Sources
+data_sources:
+  dre_atlas:
+    description: "World Bank DRE Atlas Data"
+    required_columns: ["Name", "Population", "Energy demand", "Latitude", "Longitude"]
+    optional_columns: ["Region or other (country-specific)", "Potential PV production"]
+    
+  transmission_network:
+    description: "Transmission network shapefile"
+    geometry_type: "LineString"
+    required_attributes: ["voltage", "capacity"]
+    
+  generators:
+    description: "Power plant database"
+    required_columns: ["Plant_Name", "Capacity_MW", "Fuel_Type", "Latitude", "Longitude"]
+
+# Scenario Templates
+scenario_templates:
+  conservative:
+    demand_growth_rate: 3.0
+    renewable_targets:
+      2030: 30
+      2050: 60
+    cost_declines:
+      solar: 2.0
+      wind: 1.5
+      battery: 5.0
+      
+  moderate:
+    demand_growth_rate: 5.0
+    renewable_targets:
+      2030: 50
+      2050: 80
+    cost_declines:
+      solar: 3.0
+      wind: 2.0
+      battery: 8.0
+      
+  ambitious:
+    demand_growth_rate: 7.0
+    renewable_targets:
+      2030: 70
+      2050: 95
+    cost_declines:
+      solar: 4.0
+      wind: 3.0
+      battery: 10.0
+
+# Data Quality Thresholds
+data_quality:
+  min_settlement_completeness: 0.8  # 80% of required fields
+  max_coordinate_precision_error: 0.01  # degrees
+  max_missing_data_percentage: 20  # % of total records
+
+# Export Settings
+export:
+  formats: ["csv", "xlsx", "json", "geojson"]
+  default_format: "csv"
+  include_metadata: true
+  
+# Security and Privacy
+security:
+  mask_coordinates: false  # Set to true for sensitive locations
+  anonymize_settlement_names: false
+  
+# Performance Settings
+performance:
+  max_settlements_for_visualization: 5000
+  chunk_size_for_processing: 10000
+  memory_limit_gb: 8# Ethiopia Energy Planning Tool Configuration
+# Configuration file for model parameters, data sources, and application settings
+
+# Application Settings
+app:
+  name: "Ethiopia Energy Planning Tool"
+  version: "1.0.0"
+  debug: false
+  log_level: "INFO"
+
+# Geographic Settings
+geography:
+  country: "Ethiopia"
+  bounds:
+    min_lat: 3.0
+    max_lat: 15.0
+    min_lon: 33.0
+    max_lon: 48.0
+  center:
+    lat: 9.1450
+    lon: 40.4897
+  epsg_code: 4326  # WGS84
+
+# Default Planning Parameters
+planning:
+  base_year: 2025
+  planning_horizon: [2025, 2030, 2040, 2050]
+  default_demand_growth: 5.0  # % per year
+  discount_rate: 0.07
+  reserve_margin: 0.15  # 15% reserve margin
+
+# Technology Parameters (Base Year 2025)
+technologies:
+  solar:
+    capital_cost_usd_per_kw: 800
+    marginal_cost_usd_per_mwh: 0
+    lifetime_years: 25
+    capacity_factor: 0.25
+    cost_decline_rate: 0.03  # 3% per year
+    max_capacity_mw: 50000
+    
+  wind:
+    capital_cost_usd_per_kw: 1200
+    marginal_cost_usd_per_mwh: 0
+    lifetime_years: 25
+    capacity_factor: 0.30
+    cost_decline_rate: 0.02  # 2% per year
+    max_capacity_mw: 30000
+    
+  hydro:
+    capital_cost_usd_per_kw: 2000
+    marginal_cost_usd_per_mwh: 5
+    lifetime_years: 50
+    capacity_factor: 0.45
+    cost_decline_rate: 0.0  # No cost decline
+    max_capacity_mw: 15000
+    
+  gas:
+    capital_cost_usd_per_kw: 600
+    marginal_cost_usd_per_mwh: 40
+    lifetime_years: 25
+    capacity_factor: 0.50
+    efficiency: 0.45
+    cost_decline_rate: -0.01  # Slight cost increase
+    fuel_cost_usd_per_mmbtu: 8.0
+    
+  coal:
+    capital_cost_usd_per_kw: 1500
+    marginal_cost_usd_per_mwh: 30
+    lifetime_years: 40
+    capacity_factor: 0.60
+    efficiency: 0.35
+    cost_decline_rate: 0.0
+    fuel_cost_usd_per_mmbtu: 3.0
+    
+  battery:
+    capital_cost_usd_per_kwh: 300
+    power_cost_usd_per_kw: 200
+    marginal_cost_usd_per_mwh: 0.01
+    lifetime_years: 15
+    efficiency_round_trip: 0.90
+    cost_decline_rate: 0.08  # 8% per year
+    max_duration_hours: 8
+
+# Transmission Line Parameters
+transmission:
+  voltage_levels:
+    400:
+      capacity_mw: 1000
+      cost_usd_per_km: 500000
+      r_ohm_per_km: 0.03
+      x_ohm_per_km: 0.30
+      
+    230:
+      capacity_mw: 400
+      cost_usd_per_km: 300000
+      r_ohm_per_km: 0.05
+      x_ohm_per_km: 0.40
+      
+    132:
+      capacity_mw: 150
+      cost_usd_per_km: 200000
+      r_ohm_per_km: 0.10
+      x_ohm_per_km: 0.40
+      
+    66:
+      capacity_mw: 50
+      cost_usd_per_km: 100000
+      r_ohm_per_km: 0.15
+      x_ohm_per_km: 0.45
+
+# Environmental Parameters
+environment:
+  emission_factors:  # kg CO2/MWh
+    solar: 0
+    wind: 0
+    hydro: 0
+    gas: 350
+    coal: 820
+    diesel: 750
+  co2_price_trajectory:  # USD/tonne CO2
+    2025: 0
+    2030: 25
+    2040: 50
+    2050: 100
+
+# Data Processing Settings
+data_processing:
+  clustering:
+    methods: ["K-means", "Hierarchical", "Administrative", "No clustering"]
+    default_clusters: 50
+    max_clusters: 200
+    
+  settlement_filters:
+    min_population: 0
+    max_distance_to_grid_km: 200
+    min_energy_demand_kwh_per_day: 0
+    
+  data_validation:
+    coordinate_bounds_check: true
+    population_range: [0, 5000000]
+    demand_range: [0, 100000]  # kWh/day
+    
+# Visualization Settings
+visualization:
+  map:
+    default_zoom: 6
+    marker_size_range: [5, 25]
+    line_width_range: [2, 8]
+    
+  colors:
+    solar: "#FDB462"
+    wind: "#80B1D3"
+    hydro: "#B3DE69"
+    gas: "#FCCDE5"
+    coal: "#D9D9D9"
+    battery: "#BEBADA"
+    transmission: "#FF5555"
+    
+  chart_themes:
+    default: "plotly_white"
+    dark: "plotly_dark"
+
+# Model Solver Settings
+solver:
+  default: "cbc"  # Open-source solver
+  alternatives: ["glpk", "gurobi", "cplex"]
+  timeout_seconds: 3600
+  gap_tolerance: 0.01
+  
+# File Paths and Data Sources
+data_sources:
+  dre_atlas:
+    description: "World Bank DRE Atlas Data"
+    required_columns: ["Name", "Population", "Energy demand", "Latitude", "Longitude"]
+    optional_columns: ["Region or other (country-specific)", "Potential PV production"]
+    
+  transmission_network:
+    description: "Transmission network shapefile"
+    geometry_type: "LineString"
+    required_attributes: ["voltage", "capacity"]
+    
+  generators:
+    description: "Power plant database"
+    required_columns: ["Plant_Name", "Capacity_MW", "Fuel_Type", "Latitude", "Longitude"]
+
+# Scenario Templates
+scenario_templates:
+  conservative:
+    demand_growth_rate: 3.0
+    renewable_targets:
+      2030: 30
+      2050: 60
+    cost_declines:
+      solar: 2.0
+      wind: 1.5
+      battery: 5.0
+      
+  moderate:
+    demand_growth_rate: 5.0
+    renewable_targets:
+      2030: 50
+      2050: 80
+    cost_declines:
+      solar: 3.0
+      wind: 2.0
+      battery: 8.0
+      
+  ambitious:
+    demand_growth_rate: 7.0
+    renewable_targets:
+      2030: 70
+      2050: 95
+    cost_declines:
+      solar: 4.0
+      wind: 3.0
+      battery: 10.0
+
+# Data Quality Thresholds
+data_quality:
+  min_settlement_completeness: 0.8  # 80% of required fields
+  max_coordinate_precision_error: 0.01  # degrees
+  max_missing_data_percentage: 20  # % of total records
+
+# Export Settings
+export:
+  formats: ["csv", "xlsx", "json", "geojson"]
+  default_format: "csv"
+  include_metadata: true
+  
+# Security and Privacy
+security:
+  mask_coordinates: false  # Set to true for sensitive locations
+  anonymize_settlement_names: false
+  
+# Performance Settings
+performance:
+  max_settlements_for_visualization: 5000
+  chunk_size_for_processing: 10000
+  memory_limit_gb: 8
